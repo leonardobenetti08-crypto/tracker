@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Leito Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Leito">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: #2a2a2e;
+    --text: #f0ede8;
+    --muted: #6b6b72;
+    --accent: #c8f060;
+    --accent-dim: #c8f06020;
+    --red: #ff5f57;
+    --blue: #4a9eff;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: calc(80px + var(--safe-bottom));
+  }
+  .header {
+    padding: calc(var(--safe-top) + 16px) 20px 0;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .logo { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
+  .date-badge { font-family: var(--mono); font-size: 11px; color: var(--muted); background: var(--surface2); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); }
+  .nav { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent; padding: 12px 16px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .view { display: none; padding: 20px; }
+  .view.active { display: block; }
+  .session-title { margin-bottom: 4px; }
+  .session-title h1 { font-size: 22px; font-weight: 600; line-height: 1.2; }
+  .session-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; font-family: var(--mono); }
+  .rest-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px 20px; text-align: center; }
+  .rest-card .rest-icon { font-size: 40px; margin-bottom: 12px; }
+  .rest-card h2 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+  .rest-card p { font-size: 13px; color: var(--muted); }
+  .exercise-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; transition: border-color 0.15s; }
+  .exercise-card.done { border-color: var(--accent); }
+  .exercise-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .exercise-left { flex: 1; }
+  .exercise-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .exercise-ref { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .exercise-right { display: flex; align-items: center; gap: 8px; }
+  .done-badge { font-family: var(--mono); font-size: 11px; font-weight: 500; background: var(--accent-dim); color: var(--accent); padding: 3px 8px; border-radius: 6px; display: none; }
+  .exercise-card.done .done-badge { display: block; }
+  .chevron { color: var(--muted); font-size: 16px; line-height: 1; }
+  .exercise-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--border); }
+  .exercise-body.open { display: block; }
+  .sets-header { display: grid; grid-template-columns: 32px 1fr 1fr auto; gap: 8px; padding: 10px 0 6px; font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .set-row { display: grid; grid-template-columns: 32px 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .set-num { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: center; background: var(--surface2); border-radius: 6px; padding: 8px 4px; }
+  .set-input { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; width: 100%; text-align: center; transition: border-color 0.15s; -webkit-appearance: none; appearance: none; }
+  .set-input:focus { outline: none; border-color: var(--accent); }
+  .set-input::placeholder { color: var(--muted); }
+  .del-set-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; padding: 4px 6px; line-height: 1; -webkit-tap-highlight-color: transparent; }
+  .add-set-btn { font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--accent-dim); border: 1px dashed var(--accent); border-radius: 8px; padding: 8px; width: 100%; cursor: pointer; margin-top: 4px; letter-spacing: 0.04em; -webkit-tap-highlight-color: transparent; }
+  .note-area { margin-top: 12px; }
+  .note-label { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .note-input { font-family: var(--sans); font-size: 13px; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; width: 100%; resize: none; height: 64px; }
+  .note-input:focus { outline: none; border-color: var(--accent); }
+  .note-input::placeholder { color: var(--muted); }
+  .hist-btn { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; color: var(--blue); background: none; border: none; cursor: pointer; margin-top: 10px; padding: 0; }
+  .finish-btn { display: block; width: 100%; font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--bg); background: var(--accent); border: none; border-radius: 12px; padding: 16px; cursor: pointer; margin-top: 20px; -webkit-tap-highlight-color: transparent; }
+  .section-label { font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .history-empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+  .session-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; cursor: pointer; }
+  .session-item-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
+  .session-item-left h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .session-item-left p { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .session-item-right { font-family: var(--mono); font-size: 11px; color: var(--accent); background: var(--accent-dim); padding: 4px 10px; border-radius: 6px; }
+  .session-item-body { display: none; padding: 0 16px 14px; border-top: 1px solid var(--border); }
+  .session-item-body.open { display: block; }
+  .session-ex-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .session-ex-row:last-child { border-bottom: none; }
+  .session-ex-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .session-sets-list { font-family: var(--mono); font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .session-set-chip { background: var(--surface2); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); color: var(--text); }
+  .session-note { font-size: 12px; color: var(--muted); margin-top: 6px; font-style: italic; }
+  .prog-search { font-family: var(--sans); font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; width: 100%; margin-bottom: 16px; }
+  .prog-search:focus { outline: none; border-color: var(--accent); }
+  .prog-search::placeholder { color: var(--muted); }
+  .ex-list-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+  .ex-list-name { font-size: 13px; font-weight: 500; }
+  .ex-list-day { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .ex-list-count { font-family: var(--mono); font-size: 11px; color: var(--accent); background: var(--accent-dim); padding: 3px 8px; border-radius: 6px; }
+  .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .settings-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .settings-card p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .settings-btn { display: block; width: 100%; font-family: var(--sans); font-size: 14px; font-weight: 500; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; text-align: center; margin-bottom: 8px; background: var(--surface2); color: var(--text); -webkit-tap-highlight-color: transparent; }
+  .settings-btn.export { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+  .settings-btn.danger { color: var(--red); border-color: var(--red); background: #ff5f5710; }
+  .install-steps { background: var(--surface2); border-radius: 10px; padding: 14px; }
+  .install-step { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .install-step:last-child { border-bottom: none; }
+  .step-num { font-family: var(--mono); font-size: 11px; color: var(--accent); background: var(--accent-dim); border-radius: 6px; padding: 2px 7px; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .step-text strong { color: var(--text); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; backdrop-filter: blur(4px); padding: 20px; overflow-y: auto; }
+  .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 440px; overflow: hidden; animation: slideUp 0.2s ease; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal-sub { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .modal-close { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-size: 18px; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 12px; }
+  .modal-body { padding: 16px 20px 20px; }
+  .prog-entry { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .prog-entry-date { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .prog-entry-sets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .prog-set-chip { font-family: var(--mono); font-size: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; color: var(--text); }
+  .prog-note { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 4px; }
+  .no-data { font-size: 13px; color: var(--muted); text-align: center; padding: 24px 0; }
+  .toast { position: fixed; bottom: calc(90px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--accent); color: var(--bg); font-family: var(--mono); font-size: 13px; font-weight: 500; padding: 10px 20px; border-radius: 20px; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; z-index: 300; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 20px; }
+  .week-day { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+  .week-day.today { border-color: var(--accent); background: var(--accent-dim); }
+  .week-day.has-session { border-color: var(--accent); }
+  .week-day-name { font-family: var(--mono); font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .week-day.today .week-day-name { color: var(--accent); }
+  .week-day-num { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+  .week-day-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); visibility: hidden; }
+  .week-day.has-session .week-day-dot { visibility: visible; }
+  #importInput { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">⚡ Leito</div>
+    <div class="date-badge" id="headerDate"></div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showView('hoy', this)">Hoy</button>
+    <button class="nav-btn" onclick="showView('historial', this)">Historial</button>
+    <button class="nav-btn" onclick="showView('progreso', this)">Progresión</button>
+    <button class="nav-btn" onclick="showView('ajustes', this)">Ajustes</button>
+  </nav>
+</div>
+
+<div id="view-hoy" class="view active"><div id="sessionContent"></div></div>
+<div id="view-historial" class="view">
+  <div class="section-label">Sesiones anteriores</div>
+  <div id="historialContent"></div>
+</div>
+<div id="view-progreso" class="view">
+  <input class="prog-search" type="search" placeholder="Buscar ejercicio..." oninput="filterExercises(this.value)">
+  <div class="section-label">Todos los ejercicios</div>
+  <div id="progContent"></div>
+</div>
+<div id="view-ajustes" class="view">
+  <div class="settings-card">
+    <h3>Agregar a pantalla de inicio</h3>
+    <p>Instala la app en tu iPhone para acceso directo, sin abrir el navegador.</p>
+    <div class="install-steps">
+      <div class="install-step"><span class="step-num">1</span><span class="step-text">Abre este archivo en <strong>Safari</strong></span></div>
+      <div class="install-step"><span class="step-num">2</span><span class="step-text">Toca el botón compartir <strong>⎙</strong> (parte de abajo)</span></div>
+      <div class="install-step"><span class="step-num">3</span><span class="step-text">Selecciona <strong>"Agregar a pantalla de inicio"</strong></span></div>
+      <div class="install-step"><span class="step-num">4</span><span class="step-text">Listo — el ícono ⚡ aparece en tu pantalla</span></div>
+    </div>
+  </div>
+  <div class="settings-card">
+    <h3>Respaldo de datos</h3>
+    <p>Exporta tus sesiones para no perder nada si cambias de dispositivo o limpias Safari.</p>
+    <button class="settings-btn export" onclick="exportData()">⬇ Exportar mis datos</button>
+    <button class="settings-btn" onclick="document.getElementById('importInput').click()">⬆ Importar datos</button>
+    <input type="file" id="importInput" accept=".json" onchange="importData(event)">
+  </div>
+  <div class="settings-card">
+    <h3>Danger zone</h3>
+    <p>Elimina todas las sesiones guardadas. No se puede deshacer.</p>
+    <button class="settings-btn danger" onclick="clearAllData()">🗑 Borrar todos los datos</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title" id="modalTitle"></div><div class="modal-sub" id="modalSub"></div></div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const RUTINA = {
+  0: { nombre: 'Domingo', tipo: 'descanso', foco: 'Descanso total', ejercicios: [] },
+  1: { nombre: 'Lunes', tipo: 'entreno', foco: 'Pecho dominante + hombro lateral + abs', ejercicios: [
+    { id: 'lun1', nombre: 'Press inclinado leve (Smith)', ref: 'Top 4–6 / Back off 6–8' },
+    { id: 'lun2', nombre: 'Press Hammer plano', ref: '6–8 / 8–10' },
+    { id: 'lun3', nombre: 'Press convergente máquina', ref: '8–10 / 10–12' },
+    { id: 'lun4', nombre: 'Elevación lateral polea unilateral', ref: '10–12 / 12–15 + drop' },
+    { id: 'lun5', nombre: 'Tríceps extensión polea alta', ref: '8–10 / 10–12 / 12–15' },
+    { id: 'lun6', nombre: 'Tríceps overhead barra', ref: '8–10 / 10–12' },
+    { id: 'lun7', nombre: 'Crunch polea + Elevaciones piernas', ref: '2×10–15 c/u' },
+  ]},
+  2: { nombre: 'Martes', tipo: 'entreno', foco: 'Espalda (densidad) + bíceps', ejercicios: [
+    { id: 'mar1', nombre: 'Jalón neutro/cerrado', ref: '8–10 / 10–12' },
+    { id: 'mar2', nombre: 'Remo con barra', ref: 'Top 4–6 / Back off 6–8' },
+    { id: 'mar3', nombre: 'Remo con mancuerna (estricto)', ref: '6–8 / 8–10' },
+    { id: 'mar4', nombre: 'Pullover unilateral polea (tobillera)', ref: '10–12 / 12–15' },
+    { id: 'mar5', nombre: 'Curl predicador en polea', ref: '8–10 / 10–12 / 12–15' },
+    { id: 'mar6', nombre: 'Curl inclinado bíceps', ref: '8–10 / 10–12' },
+  ]},
+  3: { nombre: 'Miércoles', tipo: 'entreno', foco: 'Piernas + abs', ejercicios: [
+    { id: 'mie1', nombre: 'Gemelos', ref: '10–12 / 12–15 / 12–15' },
+    { id: 'mie2', nombre: 'Hack squat', ref: 'Top 4–6 / Back off 6–8' },
+    { id: 'mie3', nombre: 'Prensa', ref: '8–10 / 10–12' },
+    { id: 'mie4', nombre: 'Hiperextensiones (glúteo)', ref: '10–12 / 12–15' },
+    { id: 'mie5', nombre: 'Extensión cuádriceps', ref: '10–12 / 12–15' },
+    { id: 'mie6', nombre: 'Curl femoral sentado', ref: '8–10 / 10–12' },
+    { id: 'mie7', nombre: 'Ab wheel / rollout', ref: '2×8–12' },
+  ]},
+  4: { nombre: 'Jueves', tipo: 'descanso', foco: 'Descanso', ejercicios: [] },
+  5: { nombre: 'Viernes', tipo: 'entreno', foco: 'Hombro dominante + pecho + tríceps', ejercicios: [
+    { id: 'vie1', nombre: 'Elevación lateral polea', ref: '10–12 / 12–15 + drop' },
+    { id: 'vie2', nombre: 'Elevaciones laterales mancuernas', ref: '8–10 / 10–12' },
+    { id: 'vie3', nombre: 'Press hombro Hammer', ref: '6–8 / 8–10' },
+    { id: 'vie4', nombre: 'Press pecho Hammer (estiramiento)', ref: '8–10 / 10–12' },
+    { id: 'vie5', nombre: 'Tríceps overhead barra sentado', ref: '8–10 / 10–12' },
+  ]},
+  6: { nombre: 'Sábado', tipo: 'entreno', foco: 'Mix acumulativo + abs', ejercicios: [
+    { id: 'sab1', nombre: 'Pecho máquina placas', ref: '8–10 / 10–12' },
+    { id: 'sab2', nombre: 'Remo máquina pecho apoyado', ref: '8–10 / 10–12' },
+    { id: 'sab3', nombre: 'Elevaciones laterales (alto volumen)', ref: '12–15 / 15–20 + drop' },
+    { id: 'sab4', nombre: 'Curl inclinado bíceps', ref: '8–10 / 10–12' },
+    { id: 'sab5', nombre: 'Tríceps extensión polea baja apoyado', ref: '10–12 / 12–15' },
+    { id: 'sab6', nombre: 'Crunch máquina/polea + Elevaciones', ref: '2×12–15 c/u' },
+  ]},
+};
+
+const ALL_EXERCISES = Object.values(RUTINA).flatMap(d => d.ejercicios.map(e => ({ ...e, dia: d.nombre })));
+let sessionData = {};
+let openExercises = new Set();
+
+function getSessions() { return JSON.parse(localStorage.getItem('leito_sessions') || '[]'); }
+function saveSessions(s) { localStorage.setItem('leito_sessions', JSON.stringify(s)); }
+function getTodayKey() { return new Date().toISOString().split('T')[0]; }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  document.getElementById('headerDate').textContent = now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' });
+  renderHoy(); renderHistorial(); renderProgreso();
+});
+
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function renderHoy() {
+  const dow = new Date().getDay();
+  const dia = RUTINA[dow];
+  const container = document.getElementById('sessionContent');
+  const today = new Date();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const sessions = getSessions();
+  const sessionDates = new Set(sessions.map(s => s.date));
+
+  let weekHtml = '<div class="week-strip">';
+  const dayNames = ['D','L','M','X','J','V','S'];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    const isToday = i === today.getDay();
+    const dateKey = d.toISOString().split('T')[0];
+    const hasSession = sessionDates.has(dateKey);
+    weekHtml += `<div class="week-day ${isToday ? 'today' : ''} ${hasSession ? 'has-session' : ''}">
+      <span class="week-day-name">${dayNames[i]}</span>
+      <span class="week-day-num">${d.getDate()}</span>
+      <span class="week-day-dot"></span>
+    </div>`;
+  }
+  weekHtml += '</div>';
+
+  if (dia.tipo === 'descanso') {
+    container.innerHTML = weekHtml + `<div class="rest-card"><div class="rest-icon">😴</div><h2>Día de descanso</h2><p>Recuperación total. Vuelves mañana.</p></div>`;
+    return;
+  }
+
+  const todayKey = getTodayKey();
+  const alreadySaved = sessions.find(s => s.date === todayKey);
+  let html = weekHtml;
+  html += `<div class="session-title"><h1>${dia.nombre}</h1></div>`;
+  html += `<div class="session-subtitle">${dia.foco}</div>`;
+  if (alreadySaved) {
+    html += `<div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--accent);font-family:var(--mono);">✓ Sesión guardada hoy</div>`;
+  }
+
+  dia.ejercicios.forEach(ex => {
+    const data = sessionData[ex.id] || { sets: [], note: '' };
+    const isDone = data.sets.length > 0;
+    const isOpen = openExercises.has(ex.id);
+    html += `<div class="exercise-card ${isDone ? 'done' : ''}" id="card-${ex.id}">
+      <div class="exercise-header" onclick="toggleExercise('${ex.id}')">
+        <div class="exercise-left">
+          <div class="exercise-name">${ex.nombre}</div>
+          <div class="exercise-ref">${ex.ref}</div>
+        </div>
+        <div class="exercise-right">
+          <span class="done-badge">✓ ${data.sets.length} series</span>
+          <span class="chevron">${isOpen ? '▲' : '▼'}</span>
+        </div>
+      </div>
+      <div class="exercise-body ${isOpen ? 'open' : ''}" id="body-${ex.id}">
+        <div class="sets-header"><span>#</span><span>Reps</span><span>Kg</span><span></span></div>
+        <div id="sets-${ex.id}">${data.sets.map((s, i) => renderSetRow(ex.id, i, s.reps, s.weight)).join('')}</div>
+        <button class="add-set-btn" onclick="addSet('${ex.id}')">+ Agregar serie</button>
+        <div class="note-area">
+          <div class="note-label">Notas / sensaciones</div>
+          <textarea class="note-input" id="note-${ex.id}" placeholder="Ej: buena sensación, subir peso la próxima..." oninput="saveNote('${ex.id}', this.value)">${data.note || ''}</textarea>
+        </div>
+        <button class="hist-btn" onclick="showExerciseHistory('${ex.id}', '${ex.nombre}')">↗ Ver historial de este ejercicio</button>
+      </div>
+    </div>`;
+  });
+
+  html += `<button class="finish-btn" onclick="finishSession(${dow})">Guardar sesión completa</button>`;
+  container.innerHTML = html;
+}
+
+function renderSetRow(exId, idx, reps = '', weight = '') {
+  return `<div class="set-row" id="setrow-${exId}-${idx}">
+    <div class="set-num">${idx + 1}</div>
+    <input class="set-input" type="text" inputmode="decimal" placeholder="—" value="${reps}" onchange="updateSet('${exId}', ${idx}, 'reps', this.value)">
+    <input class="set-input" type="text" inputmode="decimal" placeholder="—" value="${weight}" onchange="updateSet('${exId}', ${idx}, 'weight', this.value)">
+    <button class="del-set-btn" onclick="removeSet('${exId}', ${idx})">×</button>
+  </div>`;
+}
+
+function toggleExercise(id) {
+  if (openExercises.has(id)) openExercises.delete(id);
+  else openExercises.add(id);
+  document.getElementById('body-' + id).classList.toggle('open');
+  document.getElementById('card-' + id).querySelector('.chevron').textContent = openExercises.has(id) ? '▲' : '▼';
+}
+
+function addSet(exId) {
+  if (!sessionData[exId]) sessionData[exId] = { sets: [], note: '' };
+  sessionData[exId].sets.push({ reps: '', weight: '' });
+  const idx = sessionData[exId].sets.length - 1;
+  document.getElementById('sets-' + exId).insertAdjacentHTML('beforeend', renderSetRow(exId, idx));
+  updateCardDone(exId);
+}
+
+function removeSet(exId, idx) {
+  if (!sessionData[exId]) return;
+  sessionData[exId].sets.splice(idx, 1);
+  document.getElementById('sets-' + exId).innerHTML = sessionData[exId].sets.map((s, i) => renderSetRow(exId, i, s.reps, s.weight)).join('');
+  updateCardDone(exId);
+}
+
+function updateSet(exId, idx, field, value) {
+  if (!sessionData[exId]) sessionData[exId] = { sets: [], note: '' };
+  while (sessionData[exId].sets.length <= idx) sessionData[exId].sets.push({ reps: '', weight: '' });
+  sessionData[exId].sets[idx][field] = value;
+  updateCardDone(exId);
+}
+
+function saveNote(exId, value) {
+  if (!sessionData[exId]) sessionData[exId] = { sets: [], note: '' };
+  sessionData[exId].note = value;
+}
+
+function updateCardDone(exId) {
+  const data = sessionData[exId];
+  const card = document.getElementById('card-' + exId);
+  if (!card) return;
+  const done = data && data.sets.length > 0;
+  card.classList.toggle('done', done);
+  const badge = card.querySelector('.done-badge');
+  if (badge) badge.textContent = `✓ ${data ? data.sets.length : 0} series`;
+}
+
+function finishSession(dow) {
+  const dia = RUTINA[dow];
+  const exercises = dia.ejercicios.map(ex => ({
+    id: ex.id, nombre: ex.nombre,
+    sets: (sessionData[ex.id] || {}).sets || [],
+    note: (sessionData[ex.id] || {}).note || ''
+  })).filter(e => e.sets.length > 0);
+  if (exercises.length === 0) { showToast('Registra al menos una serie primero'); return; }
+  const sessions = getSessions();
+  const todayKey = getTodayKey();
+  const existing = sessions.findIndex(s => s.date === todayKey);
+  const session = { date: todayKey, dia: dia.nombre, foco: dia.foco, exercises };
+  if (existing >= 0) sessions[existing] = session;
+  else sessions.unshift(session);
+  saveSessions(sessions);
+  sessionData = {};
+  openExercises.clear();
+  showToast('✓ Sesión guardada');
+  renderHoy(); renderHistorial(); renderProgreso();
+}
+
+function renderHistorial() {
+  const sessions = getSessions();
+  const container = document.getElementById('historialContent');
+  if (sessions.length === 0) {
+    container.innerHTML = '<div class="history-empty">Todavía no hay sesiones guardadas.<br>Completa tu primer entrenamiento.</div>';
+    return;
+  }
+  container.innerHTML = sessions.map((s, i) => {
+    const dateStr = new Date(s.date + 'T12:00:00').toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+    return `<div class="session-item" onclick="toggleSessionItem(${i})">
+      <div class="session-item-header">
+        <div class="session-item-left"><h3>${s.dia}</h3><p>${dateStr}</p></div>
+        <div class="session-item-right">${s.exercises.length} ej.</div>
+      </div>
+      <div class="session-item-body" id="si-${i}">
+        ${s.exercises.map(e => `
+          <div class="session-ex-row">
+            <div class="session-ex-name">${e.nombre}</div>
+            <div class="session-sets-list">${e.sets.map((set, j) => `<span class="session-set-chip">S${j+1}: ${set.reps || '—'} × ${set.weight || '—'} kg</span>`).join('')}</div>
+            ${e.note ? `<div class="session-note">"${e.note}"</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSessionItem(i) { document.getElementById('si-' + i).classList.toggle('open'); }
+
+function renderProgreso(filter = '') {
+  const sessions = getSessions();
+  const container = document.getElementById('progContent');
+  let exercises = ALL_EXERCISES;
+  if (filter) exercises = exercises.filter(e => e.nombre.toLowerCase().includes(filter.toLowerCase()));
+  container.innerHTML = exercises.map(ex => {
+    const count = sessions.filter(s => s.exercises.some(e => e.id === ex.id)).length;
+    return `<div class="ex-list-item" onclick="showExerciseHistory('${ex.id}', '${ex.nombre}')">
+      <div><div class="ex-list-name">${ex.nombre}</div><div class="ex-list-day">${ex.dia}</div></div>
+      <div class="ex-list-count">${count} sesión${count !== 1 ? 'es' : ''}</div>
+    </div>`;
+  }).join('') || '<div class="no-data">No se encontraron ejercicios.</div>';
+}
+
+function filterExercises(val) { renderProgreso(val); }
+
+function showExerciseHistory(exId, nombre) {
+  const sessions = getSessions();
+  const entries = sessions.filter(s => s.exercises.some(e => e.id === exId))
+    .map(s => ({ date: s.date, ex: s.exercises.find(e => e.id === exId) }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  document.getElementById('modalTitle').textContent = nombre;
+  document.getElementById('modalSub').textContent = `${entries.length} sesiones registradas`;
+  const body = document.getElementById('modalBody');
+  if (entries.length === 0) {
+    body.innerHTML = '<div class="no-data">Todavía no hay datos para este ejercicio.</div>';
+  } else {
+    body.innerHTML = entries.map(entry => {
+      const dateStr = new Date(entry.date + 'T12:00:00').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      return `<div class="prog-entry">
+        <div class="prog-entry-date">${dateStr}</div>
+        <div class="prog-entry-sets">${entry.ex.sets.map((s, i) => `<span class="prog-set-chip">S${i+1}: ${s.reps || '—'} × ${s.weight || '—'} kg</span>`).join('')}</div>
+        ${entry.ex.note ? `<div class="prog-note">"${entry.ex.note}"</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay') || e.currentTarget.tagName === 'BUTTON') {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+function exportData() {
+  const sessions = getSessions();
+  if (sessions.length === 0) { showToast('No hay datos para exportar'); return; }
+  const blob = new Blob([JSON.stringify({ version: 1, sessions }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `leito-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Datos exportados');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.sessions || !Array.isArray(parsed.sessions)) throw new Error();
+      saveSessions(parsed.sessions);
+      renderHoy(); renderHistorial(); renderProgreso();
+      showToast(`✓ ${parsed.sessions.length} sesiones importadas`);
+    } catch { showToast('Error al importar el archivo'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('¿Seguro? Se borran todas las sesiones. No se puede deshacer.')) return;
+  localStorage.removeItem('leito_sessions');
+  sessionData = {}; openExercises.clear();
+  renderHoy(); renderHistorial(); renderProgreso();
+  showToast('Datos eliminados');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
