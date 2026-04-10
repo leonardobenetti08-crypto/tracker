@@ -13,12 +13,13 @@
   var c=document.createElement('canvas');
   c.width=180;c.height=180;
   var ctx=c.getContext('2d');
-  ctx.fillStyle='#000000';
+  ctx.fillStyle='#FFE082';
   ctx.fillRect(0,0,180,180);
-  ctx.font='110px serif';
+  ctx.fillStyle='#000000';
+  ctx.font='bold 110px serif';
   ctx.textAlign='center';
   ctx.textBaseline='middle';
-  ctx.fillText('\uD83E\uDD77',90,100);
+  ctx.fillText('\u4F8D',90,97);
   var l=document.getElementById('appIcon');
   if(l) l.href=c.toDataURL('image/png');
 })();
@@ -41,7 +42,7 @@
   /* HEADER */
   .header { padding: calc(var(--safe-top) + 16px) 20px 0; position: sticky; top: 0; background: var(--bg); z-index: 100; border-bottom: 1px solid var(--border); }
   .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .logo { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
+  .logo { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
   .date-badge { font-family: var(--mono); font-size: 11px; color: var(--muted); background: var(--surface2); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); }
   .nav { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
   .nav::-webkit-scrollbar { display: none; }
@@ -220,7 +221,7 @@
 
 <div class="header">
   <div class="header-top">
-    <div class="logo">🥷 Tracker</div>
+    <div class="logo">侍 Tracker</div>
     <div class="date-badge" id="headerDate"></div>
   </div>
   <nav class="nav">
