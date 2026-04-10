@@ -6,7 +6,23 @@
 <title>Leito Tracker</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Leito">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<link rel="apple-touch-icon" id="appIcon" href="">
+<script>
+(function(){
+  var c=document.createElement('canvas');
+  c.width=180;c.height=180;
+  var ctx=c.getContext('2d');
+  ctx.fillStyle='#000000';
+  ctx.fillRect(0,0,180,180);
+  ctx.font='110px serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('\uD83E\uDD77',90,100);
+  var l=document.getElementById('appIcon');
+  if(l) l.href=c.toDataURL('image/png');
+})();
+</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
