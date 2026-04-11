@@ -342,6 +342,21 @@ let selectedDateOffset = 0;
 function getSessions() { return JSON.parse(localStorage.getItem('leito_sessions') || '[]'); }
 function saveSessions(s) { localStorage.setItem('leito_sessions', JSON.stringify(s)); }
 function getTodayKey() { return new Date().toISOString().split('T')[0]; }
+function saveDraft() {
+  localStorage.setItem('leito_draft', JSON.stringify({ sessionData, absData, selectedDow, selectedDateOffset }));
+}
+function loadDraft() {
+  const raw = localStorage.getItem('leito_draft');
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (d.sessionData) sessionData = d.sessionData;
+    if (d.absData) absData = d.absData;
+    if (typeof d.selectedDow === 'number') selectedDow = d.selectedDow;
+    if (typeof d.selectedDateOffset === 'number') selectedDateOffset = d.selectedDateOffset;
+  } catch(e) {}
+}
+function clearDraft() { localStorage.removeItem('leito_draft'); }
 function getSelectedDateKey() {
   const d = new Date();
   d.setDate(d.getDate() + selectedDateOffset);
@@ -360,7 +375,7 @@ function getPrevSession(exId) {
 document.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
   document.getElementById('headerDate').textContent = now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' });
-  renderHoy(); renderHistorial(); renderProgreso();
+  loadDraft(); renderHoy(); renderHistorial(); renderProgreso();
 });
 
 function showView(name, btn) {
@@ -430,8 +445,12 @@ function renderHoy() {
   let html = topHtml;
   html += `<div class="session-title"><h1>${dia.nombre}</h1></div>`;
   html += `<div class="session-subtitle">${dia.foco}</div>`;
+  const hasDraft = localStorage.getItem('leito_draft') && Object.keys(sessionData).length > 0;
   if (alreadySaved) {
     html += `<div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--accent);font-family:var(--mono);">✓ Sesión guardada</div>`;
+  }
+  if (hasDraft && !alreadySaved) {
+    html += `<div style="background:#FFE08218;border:1px solid #FFE082;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#FFE082;font-family:var(--mono);">↺ Borrador recuperado — continúa anotando</div>`;
   }
 
   dia.ejercicios.forEach(ex => {
@@ -552,11 +571,13 @@ function updateSet(exId, idx, field, value) {
   while (sessionData[exId].sets.length <= idx) sessionData[exId].sets.push({ kg: '', reps: '' });
   sessionData[exId].sets[idx][field] = value;
   updateCardDone(exId);
+  saveDraft();
 }
 
 function saveNote(exId, value) {
   if (!sessionData[exId]) sessionData[exId] = { sets: [], note: '' };
   sessionData[exId].note = value;
+  saveDraft();
 }
 
 function updateCardDone(exId) {
@@ -569,6 +590,7 @@ function updateCardDone(exId) {
 
 function toggleAbs(dateKey) {
   absData[dateKey] = !absData[dateKey];
+  saveDraft();
   const card = document.getElementById('abs-card');
   if (!card) return;
   card.classList.toggle('checked', absData[dateKey]);
@@ -600,7 +622,9 @@ function finishSession(dow) {
 
   saveSessions(sessions);
   sessionData = {};
+  absData = {};
   openExercises.clear();
+  clearDraft();
   showToast('✓ Sesión guardada');
   renderHoy(); renderHistorial(); renderProgreso();
 }
